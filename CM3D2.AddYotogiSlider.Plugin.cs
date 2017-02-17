@@ -937,9 +937,20 @@ namespace CM3D2.AddYotogiSlider.Plugin
             sceneLevel = level;
         }
 
+        private bool bNeedSkillInit;
         public void Update()
         {
             fPassedTimeOnLevel += Time.deltaTime;
+
+            if(sceneLevel == 14)
+            {
+                if(GameMain.Instance.MainCamera.IsFadeProc())
+                {
+                    bSyncMotionSpeed = false;
+                    bNeedSkillInit = true;
+                    bFadeInWait = true;
+                }
+            }
 
             if (sceneLevel == 14 && bInitCompleted)
             {
@@ -961,22 +972,13 @@ namespace CM3D2.AddYotogiSlider.Plugin
                     }
                     break;
 
-                    case WfScreenChildren.FadeStatus.FadeInWait :
-                    {
-                        if (!bFadeInWait)
-                        {
-                            bSyncMotionSpeed = false;
-                            bFadeInWait = true;
-                        }
-                    }
-                    break;
-
                     case WfScreenChildren.FadeStatus.Wait :
                     {
-                        if (bFadeInWait)
+                        if (bNeedSkillInit)
                         {
                             initOnStartSkill();
                             bFadeInWait = false;
+                            bNeedSkillInit = false;
                         }
                         else if (canStart)
                         {
@@ -1584,6 +1586,7 @@ namespace CM3D2.AddYotogiSlider.Plugin
             }
         }
 
+        private Coroutine getBoneAnimetionCo;
         private void initOnStartSkill()
         {
             bLoadBoneAnimetion = false;
@@ -1640,7 +1643,11 @@ namespace CM3D2.AddYotogiSlider.Plugin
 
             foreach (KeyValuePair<string, PlayAnime> kvp in pa) if (kvp.Value.NowPlaying) kvp.Value.Stop();
 
-            StartCoroutine( getBoneAnimetionCoroutine(WaitBoneLoad) );
+            if(getBoneAnimetionCo != null)
+            {
+                StopCoroutine(getBoneAnimetionCo);
+            }
+            getBoneAnimetionCo = StartCoroutine( getBoneAnimetionCoroutine(WaitBoneLoad) );
 
             bSyncMotionSpeed = true;
             StartCoroutine( syncMotionSpeedSliderCoroutine(TimePerUpdateSpeed) );
@@ -2479,6 +2486,7 @@ namespace CM3D2.AddYotogiSlider.Plugin
             for (int j=0; j<i; j++) anm_BO_mbody[j] = go_BO_mbody[j].GetComponent<Animation>();
 
             bLoadBoneAnimetion = true;
+            getBoneAnimetionCo = null;
             //LogDebug("BoneAnimetion : {0}", i);
         }
 
